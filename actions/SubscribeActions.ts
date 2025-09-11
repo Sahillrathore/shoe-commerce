@@ -11,6 +11,7 @@ const schema = z.object({
     .email("This is not a valid email."),
 });
 
+
 export async function subscribeAction(email: string) {
   try {
     const validatedFields = schema.safeParse({
