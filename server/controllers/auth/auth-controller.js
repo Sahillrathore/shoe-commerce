@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 
-//register
+// register
 const registerUser = async (req, res) => {
   const { userName, email, password } = req.body;
 
@@ -15,44 +15,29 @@ const registerUser = async (req, res) => {
       });
 
     const hashPassword = await bcrypt.hash(password, 12);
-    const newUser = new User({
-      userName,
-      email,
-      password: hashPassword,
-    });
+    const newUser = new User({ userName, email, password: hashPassword });
 
     await newUser.save();
-    res.status(200).json({
-      success: true,
-      message: "Registration successful",
-    });
+    res.status(200).json({ success: true, message: "Registration successful" });
   } catch (e) {
     console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occured",
-    });
+    res.status(500).json({ success: false, message: "Some error occured" });
   }
 };
 
-//login
+// login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const checkUser = await User.findOne({ email });
-    console.log(checkUser);
-    
     if (!checkUser)
       return res.json({
         success: false,
         message: "User doesn't exists! Please register first",
       });
 
-    const checkPasswordMatch = await bcrypt.compare(
-      password,
-      checkUser.password
-    );
+    const checkPasswordMatch = await bcrypt.compare(password, checkUser.password);
     if (!checkPasswordMatch)
       return res.json({
         success: false,
@@ -67,55 +52,60 @@ const loginUser = async (req, res) => {
         userName: checkUser.userName,
       },
       "CLIENT_SECRET_KEY",
-      { expiresIn: "60m" }
+      { expiresIn: "7d" } // ✅ token valid for 7 days
     );
 
-    res.cookie("token", token, { httpOnly: true, secure: false }).json({
-      success: true,
-      message: "Logged in successfully",
-      user: {
-        email: checkUser.email,
-        role: checkUser.role,
-        id: checkUser._id,
-        userName: checkUser.userName,
-      },
-    });
+    // ✅ cookie valid for 7 days
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // set true on HTTPS
+        sameSite: "lax", // adjust to 'none' (+ secure:true) if cross-site is needed
+        maxAge: sevenDaysMs,
+        path: "/",
+      })
+      .json({
+        success: true,
+        message: "Logged in successfully",
+        user: {
+          email: checkUser.email,
+          role: checkUser.role,
+          id: checkUser._id,
+          userName: checkUser.userName,
+        },
+      });
   } catch (e) {
     console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occured",
-    });
+    res.status(500).json({ success: false, message: "Some error occured" });
   }
 };
 
-//logout
-
+// logout
 const logoutUser = (req, res) => {
-  res.clearCookie("token").json({
-    success: true,
-    message: "Logged out successfully!",
-  });
+  // ✅ use same path/options to ensure the cookie is cleared
+  res
+    .clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    })
+    .json({ success: true, message: "Logged out successfully!" });
 };
 
-//auth middleware
+// auth middleware
 const authMiddleware = async (req, res, next) => {
   const token = req.cookies.token;
   if (!token)
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorised user!",
-    });
+    return res.status(401).json({ success: false, message: "Unauthorised user!" });
 
   try {
     const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: "Unauthorised user!",
-    });
+    res.status(401).json({ success: false, message: "Unauthorised user!" });
   }
 };
 

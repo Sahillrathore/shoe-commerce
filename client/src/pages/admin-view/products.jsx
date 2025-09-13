@@ -30,6 +30,7 @@ const initialFormData = {
   salePrice: "",
   totalStock: "",
   averageReview: 0,
+  subCategory: "",
 };
 
 function AdminProducts() {

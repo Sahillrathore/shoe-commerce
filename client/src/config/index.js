@@ -66,6 +66,18 @@ export const addProductFormElements = [
     ],
   },
   {
+    label: "Sub Category",
+    name: "subCategory",
+    componentType: "select",
+    options: [
+      { id: "featured", label: "Featured" },
+      { id: "popular", label: "Popular" },
+      { id: "new", label: "New" },
+      { id: "discounted", label: "Discounted" },
+      // { id: "footwear", label: "Footwear" },
+    ],
+  },
+  {
     label: "Brand",
     name: "brand",
     componentType: "select",
