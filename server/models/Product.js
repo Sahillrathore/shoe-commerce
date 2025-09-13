@@ -1,8 +1,13 @@
+// models/Product.js
 const mongoose = require("mongoose");
 
 const ProductSchema = new mongoose.Schema(
   {
-    image: String,
+    image: String,          // main image (unchanged)
+    images: {               // ✅ NEW: gallery images
+      type: [String],
+      default: [],
+    },
     title: String,
     description: String,
     category: String,

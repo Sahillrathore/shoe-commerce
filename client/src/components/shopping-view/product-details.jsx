@@ -10,29 +10,44 @@ import { useToast } from "../ui/use-toast";
 import { setProductDetails } from "@/store/shop/products-slice";
 import { Label } from "../ui/label";
 import StarRatingComponent from "../common/star-rating";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addReview, getReviews } from "@/store/shop/review-slice";
-import { replace, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
+
+  // 🖼️ state for which image is currently shown as the big image
+  const [activeImage, setActiveImage] = useState(productDetails?.image || "");
+
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { reviews } = useSelector((state) => state.shopReview);
   const navigate = useNavigate();
-
   const { toast } = useToast();
 
-  function handleRatingChange(getRating) {
-    console.log(getRating, "getRating");
+  // Build gallery list (main first, then additional images)
+  const galleryImages = useMemo(() => {
+    const extra = Array.isArray(productDetails?.images)
+      ? productDetails.images.filter(Boolean)
+      : [];
+    const main = productDetails?.image ? [productDetails.image] : [];
+    // if you want to show only additional images in the strip, return `extra` instead of `[...main, ...extra]`
+    return [...main, ...extra];
+  }, [productDetails]);
 
+  useEffect(() => {
+    // when product changes or dialog opens, reset active image to the product's main image
+    setActiveImage(productDetails?.image || "");
+  }, [productDetails, open]);
+
+  function handleRatingChange(getRating) {
     setRating(getRating);
   }
 
   function handleAddToCart(getCurrentProductId, getTotalStock) {
-
     if (!user) {
       toast({
         title: `Please login to add items to cart`,
@@ -55,7 +70,6 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             title: `Only ${getQuantity} quantity can be added for this item`,
             variant: "destructive",
           });
-
           return;
         }
       }
@@ -69,9 +83,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     ).then((data) => {
       if (data?.payload?.success) {
         dispatch(fetchCartItems(user?.id));
-        toast({
-          title: "Product is added to cart",
-        });
+        toast({ title: "Product is added to cart" });
       }
     });
   }
@@ -81,6 +93,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     dispatch(setProductDetails());
     setRating(0);
     setReviewMsg("");
+    setActiveImage(productDetails?.image || "");
   }
 
   function handleAddReview() {
@@ -97,18 +110,14 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
         setRating(0);
         setReviewMsg("");
         dispatch(getReviews(productDetails?._id));
-        toast({
-          title: "Review added successfully!",
-        });
+        toast({ title: "Review added successfully!" });
       }
     });
   }
 
   useEffect(() => {
     if (productDetails !== null) dispatch(getReviews(productDetails?._id));
-  }, [productDetails]);
-
-  console.log(reviews, "reviews");
+  }, [productDetails, dispatch]);
 
   const averageReview =
     reviews && reviews.length > 0
@@ -118,23 +127,59 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="grid grid-cols-2 gap-8 sm:p-12 max-w-[90vw] sm:max-w-[80vw] lg:max-w-[70vw]">
-        <div className="relative overflow-hidden rounded-lg">
-          <img
-            src={productDetails?.image}
-            alt={productDetails?.title}
-            width={600}
-            height={600}
-            className="aspect-square w-full object-cover"
-          />
+      <DialogContent className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:p-12 max-w-[90vw] sm:max-w-[80vw] lg:max-w-[70vw]">
+        {/* LEFT: Image + thumbnails */}
+        <div className="relative">
+          {/* Main Image */}
+          <div className="overflow-hidden rounded-lg mb-4">
+            <img
+              src={activeImage || productDetails?.image}
+              alt={productDetails?.title}
+              width={600}
+              height={600}
+              className="aspect-square w-full object-contain"
+            />
+          </div>
+
+          {/* Thumbnails Row */}
+          {galleryImages?.length > 1 && (
+            <div
+              className="flex gap-3 overflow-x-auto pb-2"
+              onMouseLeave={() => setActiveImage(productDetails?.image || "")}
+            >
+              {galleryImages.map((imgUrl, idx) => {
+                const isActive = (activeImage || productDetails?.image) === imgUrl;
+                return (
+                  <button
+                    key={`${imgUrl}-${idx}`}
+                    type="button"
+                    onMouseEnter={() => setActiveImage(imgUrl)}
+                    className={`relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden border
+                      ${isActive ? "border-primary ring-2 ring-primary/30" : "border-transparent"}`}
+                    aria-label={`Preview image ${idx + 1}`}
+                    title="Hover to preview"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`thumb-${idx + 1}`}
+                      className="h-full w-full object-contain"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <div className="">
+
+        {/* RIGHT: Details */}
+        <div>
           <div>
             <h1 className="text-3xl font-extrabold">{productDetails?.title}</h1>
             <p className="text-muted-foreground text-2xl mb-5 mt-4">
               {productDetails?.description}
             </p>
           </div>
+
           <div className="flex items-center justify-between">
             <p
               className={`text-3xl font-bold text-primary ${productDetails?.salePrice > 0 ? "line-through" : ""
@@ -148,6 +193,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               </p>
             ) : null}
           </div>
+
           <div className="flex items-center gap-2 mt-2">
             <div className="flex items-center gap-0.5">
               <StarRatingComponent rating={averageReview} />
@@ -156,6 +202,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               ({averageReview.toFixed(2)})
             </span>
           </div>
+
           <div className="mt-5 mb-5">
             {productDetails?.totalStock === 0 ? (
               <Button className="w-full opacity-60 cursor-not-allowed">
@@ -165,26 +212,25 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               <Button
                 className="w-full"
                 onClick={() =>
-                  handleAddToCart(
-                    productDetails?._id,
-                    productDetails?.totalStock
-                  )
+                  handleAddToCart(productDetails?._id, productDetails?.totalStock)
                 }
               >
                 Add to Cart
               </Button>
             )}
           </div>
+
           <Separator />
+
           <div className="max-h-[300px] overflow-auto">
             <h2 className="text-xl font-bold mb-4">Reviews</h2>
             <div className="grid gap-6">
               {reviews && reviews.length > 0 ? (
                 reviews.map((reviewItem) => (
-                  <div className="flex gap-4">
+                  <div className="flex gap-4" key={reviewItem?._id}>
                     <Avatar className="w-10 h-10 border">
                       <AvatarFallback>
-                        {reviewItem?.userName[0].toUpperCase()}
+                        {reviewItem?.userName?.[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid gap-1">
@@ -204,6 +250,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 <h1>No Reviews</h1>
               )}
             </div>
+
             <div className="mt-10 flex-col flex gap-2">
               <Label>Write a review</Label>
               <div className="flex gap-1">
@@ -218,10 +265,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                 onChange={(event) => setReviewMsg(event.target.value)}
                 placeholder="Write a review..."
               />
-              <Button
-                onClick={handleAddReview}
-                disabled={reviewMsg.trim() === ""}
-              >
+              <Button onClick={handleAddReview} disabled={reviewMsg.trim() === ""}>
                 Submit
               </Button>
             </div>
