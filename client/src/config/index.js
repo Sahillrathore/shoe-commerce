@@ -108,7 +108,7 @@ export const addProductFormElements = [
     label: "Size",
     name: "size",
     componentType: "input",
-    type: "number",
+    type: "text",
     placeholder: "Enter sizes",
   },
   {
