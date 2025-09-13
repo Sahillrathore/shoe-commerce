@@ -3,108 +3,113 @@ const Order = require("../../models/Order");
 const Cart = require("../../models/Cart");
 const Product = require("../../models/Product");
 
+const Coupon = require("../../models/Coupon");
+
+function computeDiscount(coupon, subtotal) {
+  if (coupon.type === "flat") return Math.min(subtotal, Math.max(0, coupon.value));
+  const raw = (subtotal * coupon.value) / 100;
+  return Math.min(
+    subtotal,
+    Math.max(0, coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw)
+  );
+}
+
 const createOrder = async (req, res) => {
   try {
     const {
       userId,
       cartItems = [],
       addressInfo = {},
-      paymentMethod,             // 'cod' | 'upi'
-      totalAmount,
-
-      // optional / legacy fields
+      paymentMethod, // 'cod' | 'upi'
       orderStatus,
       paymentStatus,
+      pricing, // { subtotal, coupon: {code}, upiDiscount, finalAmount } from client (will recompute)
+      cartId,
       orderDate,
       orderUpdateDate,
-      paymentId,
-      payerId,
-      cartId,
-
-      // ✅ NEW: carry UPI details here when method = 'upi'
-      paymentMeta,               // { upiId: string, upiName: string }
+      paymentMeta,
     } = req.body;
 
-    // ---------- Basic validation ----------
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "userId is required" });
-    }
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      return res.status(400).json({ success: false, message: "cartItems cannot be empty" });
-    }
-    if (!addressInfo?.address || !addressInfo?.city || !addressInfo?.pincode || !addressInfo?.phone) {
-      return res.status(400).json({ success: false, message: "addressInfo is incomplete" });
-    }
-    // 10-digit phone
-    if (!/^\d{10}$/.test(String(addressInfo.phone || "").trim())) {
-      return res.status(400).json({ success: false, message: "Invalid phone (must be 10 digits)" });
-    }
-    if (!["cod", "upi"].includes(paymentMethod)) {
-      return res.status(400).json({ success: false, message: "Invalid paymentMethod" });
-    }
+    if (!userId) return res.status(400).json({ success: false, message: "userId required" });
+    if (!Array.isArray(cartItems) || !cartItems.length)
+      return res.status(400).json({ success: false, message: "Empty cart" });
+    if (!["cod", "upi"].includes(paymentMethod))
+      return res.status(400).json({ success: false, message: "Invalid payment method" });
 
-    // UPI-specific validation
-    if (paymentMethod === "upi") {
-      const upiId = String(paymentMeta?.upiId || "").trim();
-      const upiName = String(paymentMeta?.upiName || "").trim();
-      const upiRegex = /^[\w.\-]{2,}@[A-Za-z]{2,}$/; // e.g. name@upi
-      if (!upiId || !upiRegex.test(upiId) || !upiName) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid UPI details (provide valid upiId like name@upi and upiName)",
-        });
+    // recompute subtotal from items
+    const subtotal = cartItems.reduce(
+      (sum, it) => sum + Number(it.price || 0) * Number(it.quantity || 0),
+      0
+    );
+
+    // coupon validation (server source of truth)
+    let couponObj = null;
+    let couponDiscount = 0;
+    if (pricing?.coupon?.code) {
+      const coupon = await Coupon.findOne({ code: String(pricing.coupon.code).toUpperCase() });
+      const now = new Date();
+      if (
+        coupon &&
+        coupon.active &&
+        (!coupon.startAt || now >= coupon.startAt) &&
+        (!coupon.endAt || now <= coupon.endAt) &&
+        subtotal >= (coupon.minOrder || 0) &&
+        (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit)
+      ) {
+        couponDiscount = Math.floor(computeDiscount(coupon, subtotal));
+        couponObj = { code: coupon.code, discount: couponDiscount };
       }
     }
 
-    // ---------- Derive statuses ----------
-    // You can customize these defaults as needed
-    const derivedOrderStatus = orderStatus || "confirmed";
-    const derivedPaymentStatus =
-      paymentStatus || (paymentMethod === "cod" ? "pending" : "pending"); // keep 'pending' until captured/verified
+    // upi discount
+    const upiDiscount = paymentMethod === "upi" ? 100 : 0;
 
-    // ---------- Build and save order ----------
+    const finalAmount = Math.max(0, subtotal - couponDiscount - upiDiscount);
+
     const doc = {
       userId,
       cartId,
       cartItems,
       addressInfo,
-      orderStatus: derivedOrderStatus,
+      orderStatus: orderStatus || "confirmed",
       paymentMethod,
-      paymentStatus: derivedPaymentStatus,
-      totalAmount,
+      paymentStatus: paymentStatus || "pending",
+      pricing: {
+        subtotal,
+        coupon: couponObj,
+        upiDiscount,
+        finalAmount,
+      },
+      totalAmount: finalAmount,
       orderDate: orderDate || new Date(),
       orderUpdateDate: orderUpdateDate || new Date(),
-      paymentId: paymentId || "",
-      payerId: payerId || "",
+      paymentMeta: paymentMeta || undefined,
     };
 
-    // Attach UPI meta when applicable
-    if (paymentMethod === "upi" && paymentMeta) {
-      doc.paymentMeta = {
-        upiId: String(paymentMeta.upiId).trim(),
-        upiName: String(paymentMeta.upiName).trim(),
-      };
-    }
+    const order = new Order(doc);
+    await order.save();
 
-    const newlyCreatedOrder = new Order(doc);
-    await newlyCreatedOrder.save();
+    // increment coupon usage (simple global count)
+    if (couponObj) {
+      await Coupon.updateOne(
+        { code: couponObj.code },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     return res.status(201).json({
       success: true,
       message: "Order created successfully",
-      orderId: newlyCreatedOrder._id,
-      data: newlyCreatedOrder,
+      orderId: order._id,
+      data: order,
     });
   } catch (e) {
     console.error(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    res.status(500).json({ success: false, message: "Some error occurred!" });
   }
 };
 
-module.exports = { createOrder };
+
 
 const capturePayment = async (req, res) => {
   try {

@@ -58,6 +58,7 @@ const addProduct = async (req, res) => {
       totalStock,
       averageReview,
       subCategory,
+      size,
     } = req.body;
 
     const newlyCreatedProduct = new Product({
@@ -72,6 +73,7 @@ const addProduct = async (req, res) => {
       totalStock,
       averageReview,
       subCategory,
+      size
     });
 
     await newlyCreatedProduct.save();
@@ -116,6 +118,7 @@ const editProduct = async (req, res) => {
       totalStock,
       averageReview,
       subCategory,
+      size,
     } = req.body;
 
     let findProduct = await Product.findById(id);
@@ -132,6 +135,7 @@ const editProduct = async (req, res) => {
     findProduct.image = image ?? findProduct.image;
     findProduct.averageReview = averageReview ?? findProduct.averageReview;
     findProduct.subCategory = subCategory ?? findProduct.subCategory;
+    findProduct.size = size ?? findProduct.size;
 
     // ✅ Replace full gallery if explicitly provided
     if (Array.isArray(images)) {

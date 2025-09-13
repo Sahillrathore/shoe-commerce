@@ -105,6 +105,13 @@ export const addProductFormElements = [
     placeholder: "Enter sale price (optional)",
   },
   {
+    label: "Size",
+    name: "size",
+    componentType: "input",
+    type: "number",
+    placeholder: "Enter sizes",
+  },
+  {
     label: "Total Stock",
     name: "totalStock",
     componentType: "input",

@@ -1,38 +1,52 @@
 const mongoose = require("mongoose");
 
-const OrderSchema = new mongoose.Schema({
-  userId: String,
-  cartId: String,
-  cartItems: [
-    {
-      productId: String,
-      title: String,
-      image: String,
-      price: String,
-      quantity: Number,
+const PricingSchema = new mongoose.Schema(
+  {
+    subtotal: Number,
+    coupon: {
+      code: String,
+      discount: Number,
     },
-  ],
-  addressInfo: {
-    addressId: String,
-    address: String,
-    city: String,
-    pincode: String,
-    phone: String,
-    notes: String,
+    upiDiscount: Number,
+    finalAmount: Number,
   },
-  orderStatus: String,
-  paymentMethod: String,
-  paymentStatus: String,
-  totalAmount: Number,
-  orderDate: Date,
-  orderUpdateDate: Date,
-  paymentId: String,
-  payerId: String,
+  { _id: false }
+);
 
-  paymentMeta: {
-    upiId: { type: String },
-    upiName: { type: String },
-  }
-});
+const OrderSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    cartId: { type: String },
+    cartItems: [
+      {
+        productId: String,
+        title: String,
+        image: String,
+        price: Number,
+        quantity: Number,
+      },
+    ],
+    addressInfo: {
+      addressId: String,
+      address: String,
+      city: String,
+      pincode: String,
+      phone: String,
+      notes: String,
+    },
+    orderStatus: String,
+    paymentMethod: String, // 'cod' | 'upi'
+    paymentStatus: String,
+    pricing: PricingSchema, // ✅
+    totalAmount: Number, // duplicate for convenience
+    orderDate: Date,
+    orderUpdateDate: Date,
+    paymentMeta: {
+      upiId: String,
+      upiName: String,
+    },
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Order", OrderSchema);

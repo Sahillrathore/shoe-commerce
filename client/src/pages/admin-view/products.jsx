@@ -32,6 +32,7 @@ const initialFormData = {
   totalStock: "",
   averageReview: 0,
   subCategory: "",
+  size: [6,7,8,9],
 };
 
 const REQUIRED_FIELDS = [
