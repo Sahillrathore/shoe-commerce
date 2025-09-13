@@ -23,32 +23,29 @@ import PaypalReturnPage from "./pages/shopping-view/paypal-return";
 import PaymentSuccessPage from "./pages/shopping-view/payment-success";
 import SearchProducts from "./pages/shopping-view/search";
 
+import RequireAuth from "./components/common/RequireAuth";
+import RequireAdmin from "./components/common/RequireAdmin";
+
 function App() {
-  const { user, isAuthenticated, isLoading } = useSelector(
-    (state) => state.auth
-  );
+  const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
 
-  if (isLoading) return <Skeleton className="w-[800] bg-black h-[600px]" />;
-
-  console.log(isLoading, user);
+  if (isLoading) return <Skeleton className="w-[800px] bg-black h-[600px]" />;
 
   return (
     <div className="flex flex-col overflow-hidden bg-white">
       <Routes>
+        {/* Root redirect handled by CheckAuth */}
         <Route
           path="/"
-          element={
-            <CheckAuth
-              isAuthenticated={isAuthenticated}
-              user={user}
-            ></CheckAuth>
-          }
+          element={<CheckAuth isAuthenticated={isAuthenticated} user={user} />}
         />
+
+        {/* Auth pages: visible if not logged in; auto-redirect if logged in */}
         <Route
           path="/auth"
           element={
@@ -60,12 +57,14 @@ function App() {
           <Route path="login" element={<AuthLogin />} />
           <Route path="register" element={<AuthRegister />} />
         </Route>
+
+        {/* Admin: always protected + admin-only */}
         <Route
           path="/admin"
           element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+            <RequireAdmin isAuthenticated={isAuthenticated} user={user}>
               <AdminLayout />
-            </CheckAuth>
+            </RequireAdmin>
           }
         >
           <Route path="dashboard" element={<AdminDashboard />} />
@@ -73,6 +72,8 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="features" element={<AdminFeatures />} />
         </Route>
+
+        {/* Shop: public by default */}
         <Route
           path="/shop"
           element={
@@ -81,14 +82,46 @@ function App() {
             </CheckAuth>
           }
         >
+          {/* PUBLIC pages */}
           <Route path="home" element={<ShoppingHome />} />
           <Route path="listing" element={<ShoppingListing />} />
-          <Route path="checkout" element={<ShoppingCheckout />} />
-          <Route path="account" element={<ShoppingAccount />} />
-          <Route path="paypal-return" element={<PaypalReturnPage />} />
-          <Route path="payment-success" element={<PaymentSuccessPage />} />
           <Route path="search" element={<SearchProducts />} />
+
+          {/* PROTECTED pages */}
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth isAuthenticated={isAuthenticated}>
+                <ShoppingCheckout />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="account"
+            element={
+              <RequireAuth isAuthenticated={isAuthenticated}>
+                <ShoppingAccount />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="paypal-return"
+            element={
+              <RequireAuth isAuthenticated={isAuthenticated}>
+                <PaypalReturnPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="payment-success"
+            element={
+              <RequireAuth isAuthenticated={isAuthenticated}>
+                <PaymentSuccessPage />
+              </RequireAuth>
+            }
+          />
         </Route>
+
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

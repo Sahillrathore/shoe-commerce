@@ -2,12 +2,34 @@ import { Card, CardContent, CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
 import { brandOptionsMap, categoryOptionsMap } from "@/config";
 import { Badge } from "../ui/badge";
+import { toast } from "../ui/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-function ShoppingProductTile({
+
+const ShoppingProductTile = ({
   product,
   handleGetProductDetails,
   handleAddtoCart,
-}) {
+}) => {
+
+  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  
+  const addToCart = (pid, pstck) => {
+    if (!user) {
+      toast({
+        title: `Please login to add items to cart`,
+        variant: "destructive",
+      });
+      navigate("/auth/login");
+      return;
+    }
+
+    handleAddtoCart(pid, pstck);
+  
+  }
+
   return (
     <Card className="w-full max-w-sm mx-auto">
       <div onClick={() => handleGetProductDetails(product?._id)}>
@@ -43,9 +65,8 @@ function ShoppingProductTile({
           </div>
           <div className="flex justify-between items-center mb-2">
             <span
-              className={`${
-                product?.salePrice > 0 ? "line-through" : ""
-              } text-lg font-semibold text-primary`}
+              className={`${product?.salePrice > 0 ? "line-through" : ""
+                } text-lg font-semibold text-primary`}
             >
               ${product?.price}
             </span>
@@ -64,7 +85,7 @@ function ShoppingProductTile({
           </Button>
         ) : (
           <Button
-            onClick={() => handleAddtoCart(product?._id, product?.totalStock)}
+            onClick={() => addToCart(product?._id, product?.totalStock)}
             className="w-full"
           >
             Add to cart
