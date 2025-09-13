@@ -1,4 +1,4 @@
-import { HousePlug, LogOut, Menu, ShoppingCart, UserCog } from "lucide-react";
+import { HousePlug, LogOut, Menu, Search, ShoppingCart, UserCog } from "lucide-react";
 import {
   Link,
   useLocation,
@@ -82,9 +82,16 @@ function HeaderRightContent({ isAuthenticated }) {
   }, [dispatch, user?.id]);
 
   return (
-    <div className="flex lg:items-center lg:flex-row flex-col gap-4">
+    <div className="flex lg:items-center lg:flex-row flex-row-reverse gap-4">
       {/* Cart always visible */}
       <Sheet open={openCartSheet} onOpenChange={setOpenCartSheet}>
+
+        <div className="flex items-center gap-4 w-full">
+          <Link to="/shop/search" className="flex items-center gap-2">
+          <Search className="h-6 w-6" />
+          {/* <span className="font-bold">Ecommerce</span> */}
+        </Link>
+
         <Button
           onClick={() => setOpenCartSheet(true)}
           variant="outline"
@@ -101,6 +108,7 @@ function HeaderRightContent({ isAuthenticated }) {
           setOpenCartSheet={setOpenCartSheet}
           cartItems={cartItems?.items?.length > 0 ? cartItems.items : []}
         />
+        </div>
       </Sheet>
 
       {/* If NOT logged in → show Login button */}

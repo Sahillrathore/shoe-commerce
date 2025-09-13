@@ -179,25 +179,52 @@ function ShoppingHome() {
           </div>
         </div>
       </section> */}
+      <div>
+        <section className="py-10">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-normal capitalize text-center mb-8">
+              Browse Popular <span className="sm:inline hidden">range</span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {productList && productList.length > 0
+                ? productList
+                  .filter(p => p?.subCategory === "popular") // only popular
+                  .map(productItem => (
+                    <ShoppingProductTile
+                      key={productItem?._id || productItem?.id}
+                      handleGetProductDetails={handleGetProductDetails}
+                      product={productItem}
+                      handleAddtoCart={handleAddtoCart}
+                    />
+                  ))
+                : null}
+            </div>
 
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-normal capitalize text-center mb-8">
-            Browse the range
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {productList && productList.length > 0
-              ? productList.map((productItem) => (
-                <ShoppingProductTile
-                  handleGetProductDetails={handleGetProductDetails}
-                  product={productItem}
-                  handleAddtoCart={handleAddtoCart}
-                />
-              ))
-              : null}
           </div>
-        </div>
-      </section>
+        </section>
+        <section className="py-10">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-normal capitalize text-center mb-8">
+              Featured range
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {productList && productList.length > 0
+                ? productList
+                  .filter(p => p?.subCategory === "featured") // only popular
+                  .map(productItem => (
+                    <ShoppingProductTile
+                      key={productItem?._id || productItem?.id}
+                      handleGetProductDetails={handleGetProductDetails}
+                      product={productItem}
+                      handleAddtoCart={handleAddtoCart}
+                    />
+                  ))
+                : null}
+            </div>
+
+          </div>
+        </section>
+      </div>
 
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
