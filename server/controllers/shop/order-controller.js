@@ -7,41 +7,93 @@ const createOrder = async (req, res) => {
   try {
     const {
       userId,
-      cartItems,
-      addressInfo,
-      orderStatus,
-      paymentMethod,
-      paymentStatus,
+      cartItems = [],
+      addressInfo = {},
+      paymentMethod,             // 'cod' | 'upi'
       totalAmount,
+
+      // optional / legacy fields
+      orderStatus,
+      paymentStatus,
       orderDate,
       orderUpdateDate,
       paymentId,
       payerId,
       cartId,
+
+      // ✅ NEW: carry UPI details here when method = 'upi'
+      paymentMeta,               // { upiId: string, upiName: string }
     } = req.body;
 
-    // Create new order directly (no PayPal integration)
-    const newlyCreatedOrder = new Order({
+    // ---------- Basic validation ----------
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "userId is required" });
+    }
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({ success: false, message: "cartItems cannot be empty" });
+    }
+    if (!addressInfo?.address || !addressInfo?.city || !addressInfo?.pincode || !addressInfo?.phone) {
+      return res.status(400).json({ success: false, message: "addressInfo is incomplete" });
+    }
+    // 10-digit phone
+    if (!/^\d{10}$/.test(String(addressInfo.phone || "").trim())) {
+      return res.status(400).json({ success: false, message: "Invalid phone (must be 10 digits)" });
+    }
+    if (!["cod", "upi"].includes(paymentMethod)) {
+      return res.status(400).json({ success: false, message: "Invalid paymentMethod" });
+    }
+
+    // UPI-specific validation
+    if (paymentMethod === "upi") {
+      const upiId = String(paymentMeta?.upiId || "").trim();
+      const upiName = String(paymentMeta?.upiName || "").trim();
+      const upiRegex = /^[\w.\-]{2,}@[A-Za-z]{2,}$/; // e.g. name@upi
+      if (!upiId || !upiRegex.test(upiId) || !upiName) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid UPI details (provide valid upiId like name@upi and upiName)",
+        });
+      }
+    }
+
+    // ---------- Derive statuses ----------
+    // You can customize these defaults as needed
+    const derivedOrderStatus = orderStatus || "confirmed";
+    const derivedPaymentStatus =
+      paymentStatus || (paymentMethod === "cod" ? "pending" : "pending"); // keep 'pending' until captured/verified
+
+    // ---------- Build and save order ----------
+    const doc = {
       userId,
       cartId,
       cartItems,
       addressInfo,
-      orderStatus,
+      orderStatus: derivedOrderStatus,
       paymentMethod,
-      paymentStatus,
+      paymentStatus: derivedPaymentStatus,
       totalAmount,
-      orderDate,
-      orderUpdateDate,
-      paymentId,
-      payerId,
-    });
+      orderDate: orderDate || new Date(),
+      orderUpdateDate: orderUpdateDate || new Date(),
+      paymentId: paymentId || "",
+      payerId: payerId || "",
+    };
 
+    // Attach UPI meta when applicable
+    if (paymentMethod === "upi" && paymentMeta) {
+      doc.paymentMeta = {
+        upiId: String(paymentMeta.upiId).trim(),
+        upiName: String(paymentMeta.upiName).trim(),
+      };
+    }
+
+    const newlyCreatedOrder = new Order(doc);
     await newlyCreatedOrder.save();
 
     return res.status(201).json({
       success: true,
       message: "Order created successfully",
       orderId: newlyCreatedOrder._id,
+      data: newlyCreatedOrder,
     });
   } catch (e) {
     console.error(e);
@@ -51,6 +103,8 @@ const createOrder = async (req, res) => {
     });
   }
 };
+
+module.exports = { createOrder };
 
 const capturePayment = async (req, res) => {
   try {
