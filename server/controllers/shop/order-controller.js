@@ -23,22 +23,74 @@ const createOrder = async (req, res) => {
       paymentMethod, // 'cod' | 'upi'
       orderStatus,
       paymentStatus,
-      pricing, // { subtotal, coupon: {code}, upiDiscount, finalAmount } from client (will recompute)
+      pricing, // { subtotal, coupon: {code}, upiDiscount, finalAmount } - client hint only
       cartId,
       orderDate,
       orderUpdateDate,
       paymentMeta,
     } = req.body;
 
-    if (!userId) return res.status(400).json({ success: false, message: "userId required" });
-    if (!Array.isArray(cartItems) || !cartItems.length)
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "userId required" });
+    }
+    if (!Array.isArray(cartItems) || !cartItems.length) {
       return res.status(400).json({ success: false, message: "Empty cart" });
-    if (!["cod", "upi"].includes(paymentMethod))
+    }
+    if (!["cod", "upi"].includes(paymentMethod)) {
       return res.status(400).json({ success: false, message: "Invalid payment method" });
+    }
 
-    // recompute subtotal from items
-    const subtotal = cartItems.reduce(
-      (sum, it) => sum + Number(it.price || 0) * Number(it.quantity || 0),
+    // --- Validate each cart item & normalize fields (including size) ---
+    // We trust DB for product existence & (optionally) size validity.
+    const dbProducts = await Product.find({
+      _id: { $in: cartItems.map((it) => it.productId) }
+    }).lean();
+
+    const productMap = new Map(dbProducts.map((p) => [String(p._id), p]));
+
+    const normalizedItems = [];
+    for (const it of cartItems) {
+      const pid = String(it.productId || "");
+      const qty = Number(it.quantity || 0);
+      const price = Number(it.price || 0); // you may also recompute from DB if needed
+      const size = it.size === undefined || it.size === "" ? null : String(it.size);
+
+      if (!pid || qty <= 0 || price < 0) {
+        return res.status(400).json({ success: false, message: "Invalid cart item" });
+      }
+
+      const prod = productMap.get(pid);
+      if (!prod) {
+        return res.status(400).json({ success: false, message: "Product not found in cart" });
+      }
+
+      // If product has sizes configured, require a valid size
+      if (Array.isArray(prod.size) && prod.size.length > 0) {
+        if (!size) {
+          return res.status(400).json({ success: false, message: `Size required for product ${prod.title}` });
+        }
+        const allowed = prod.size
+          .flatMap(s => String(s).split(","))
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (!new Set(allowed).has(size)) {
+          return res.status(400).json({ success: false, message: `Invalid size '${size}' for product ${prod.title}` });
+        }
+      }
+
+      normalizedItems.push({
+        productId: pid,
+        title: it.title,     // kept if you send it
+        image: it.image,     // kept if you send it
+        price,               // price at purchase (or recompute from DB if you prefer)
+        quantity: qty,
+        size,                // <-- persist size
+      });
+    }
+
+    // recompute subtotal from sanitized items
+    const subtotal = normalizedItems.reduce(
+      (sum, it) => sum + Number(it.price) * Number(it.quantity),
       0
     );
 
@@ -61,7 +113,7 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // upi discount
+    // one-offer-only rule handled on client; server still enforces UPI discount if method is UPI
     const upiDiscount = paymentMethod === "upi" ? 100 : 0;
 
     const finalAmount = Math.max(0, subtotal - couponDiscount - upiDiscount);
@@ -69,7 +121,7 @@ const createOrder = async (req, res) => {
     const doc = {
       userId,
       cartId,
-      cartItems,
+      cartItems: normalizedItems,    // <-- includes size
       addressInfo,
       orderStatus: orderStatus || "confirmed",
       paymentMethod,
@@ -97,6 +149,27 @@ const createOrder = async (req, res) => {
       );
     }
 
+    // --- OPTIONAL: decrement stock (supports per-size stock array) ---
+    // for (const it of normalizedItems) {
+    //   const prod = await Product.findById(it.productId);
+    //   if (!prod) continue;
+    //   if (Array.isArray(prod.sizeStock) && prod.sizeStock.length && it.size) {
+    //     const idx = prod.sizeStock.findIndex(r => String(r.size) === String(it.size));
+    //     if (idx > -1) {
+    //       if (prod.sizeStock[idx].stock < it.quantity) {
+    //         return res.status(400).json({ success: false, message: `Insufficient stock for size ${it.size}` });
+    //       }
+    //       prod.sizeStock[idx].stock -= it.quantity;
+    //     }
+    //   } else if (typeof prod.totalStock === 'number') {
+    //     if (prod.totalStock < it.quantity) {
+    //       return res.status(400).json({ success: false, message: `Insufficient stock` });
+    //     }
+    //     prod.totalStock -= it.quantity;
+    //   }
+    //   await prod.save();
+    // }
+
     return res.status(201).json({
       success: true,
       message: "Order created successfully",
@@ -108,8 +181,6 @@ const createOrder = async (req, res) => {
     res.status(500).json({ success: false, message: "Some error occurred!" });
   }
 };
-
-
 
 const capturePayment = async (req, res) => {
   try {

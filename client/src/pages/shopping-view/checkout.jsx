@@ -36,6 +36,9 @@ function ShoppingCheckout() {
 
   const items = cartItems?.items || [];
 
+  console.log(cartItems);
+
+
   const subtotal = useMemo(
     () =>
       items.length > 0
@@ -159,6 +162,7 @@ function ShoppingCheckout() {
         image: it?.image,
         price: it?.salePrice > 0 ? it?.salePrice : it?.price,
         quantity: it?.quantity,
+        size: it?.size ?? null,
       })),
       addressInfo: {
         addressId: currentSelectedAddress?._id,
@@ -244,7 +248,10 @@ function ShoppingCheckout() {
         <div className="flex flex-col gap-4">
           {items.length > 0
             ? items.map((item) => (
-              <UserCartItemsContent key={item.productId} cartItem={item} />
+              <UserCartItemsContent
+                key={`${item.productId}-${item.size ?? 'nosize'}`}
+                cartItem={item}
+              />
             ))
             : null}
 
@@ -457,6 +464,30 @@ function ShoppingCheckout() {
                   </p>
                 ) : null}
               </div>
+            </div>
+
+            {/* Items summary with sizes */}
+            <div className="rounded-md border p-3">
+              <p className="text-sm font-medium mb-2">Items</p>
+              <ul className="space-y-1 text-sm">
+                {items.map((it) => (
+                  <li
+                    key={`${it.productId}-${it.size ?? 'nosize'}-review`}
+                    className="flex justify-between gap-2"
+                  >
+                    <span className="truncate">
+                      {it.title}
+                      {it.size ? (
+                        <span className="text-muted-foreground"> — Size: {it.size}</span>
+                      ) : null}{" "}
+                      × {it.quantity}
+                    </span>
+                    <span>
+                      ₹{(it.salePrice > 0 ? it.salePrice : it.price) * it.quantity}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="space-y-1 text-sm">

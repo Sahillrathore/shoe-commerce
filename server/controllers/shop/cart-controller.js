@@ -107,6 +107,7 @@ const fetchCartItems = async (req, res) => {
       price: item.productId.price,
       salePrice: item.productId.salePrice,
       quantity: item.quantity,
+      size: item.size ?? null,
     }));
 
     res.status(200).json({
@@ -127,35 +128,30 @@ const fetchCartItems = async (req, res) => {
 
 const updateCartItemQty = async (req, res) => {
   try {
-    const { userId, productId, quantity } = req.body;
+    let { userId, productId, quantity, size } = req.body;
+    quantity = Number(quantity) || 0;
+    if (size === undefined || size === "") size = null;
 
     if (!userId || !productId || quantity <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid data provided!",
-      });
+      return res.status(400).json({ success: false, message: "Invalid data provided!" });
     }
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart not found!",
-      });
+      return res.status(404).json({ success: false, message: "Cart not found!" });
     }
 
-    const findCurrentProductIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId
+    const findIdx = cart.items.findIndex(
+      (item) =>
+        item.productId.toString() === productId &&
+        String(item.size ?? null) === String(size ?? null)
     );
 
-    if (findCurrentProductIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart item not present !",
-      });
+    if (findIdx === -1) {
+      return res.status(404).json({ success: false, message: "Cart item not present!" });
     }
 
-    cart.items[findCurrentProductIndex].quantity = quantity;
+    cart.items[findIdx].quantity = quantity;
     await cart.save();
 
     await cart.populate({
@@ -170,9 +166,10 @@ const updateCartItemQty = async (req, res) => {
       price: item.productId ? item.productId.price : null,
       salePrice: item.productId ? item.productId.salePrice : null,
       quantity: item.quantity,
+      size: item.size ?? null,     // <- include size
     }));
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: {
         ...cart._doc,
@@ -181,10 +178,7 @@ const updateCartItemQty = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Error",
-    });
+    return res.status(500).json({ success: false, message: "Error" });
   }
 };
 
@@ -228,6 +222,7 @@ const deleteCartItem = async (req, res) => {
       price: item.productId ? item.productId.price : null,
       salePrice: item.productId ? item.productId.salePrice : null,
       quantity: item.quantity,
+      size: item.size ?? null,
     }));
 
     res.status(200).json({
