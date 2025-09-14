@@ -1,53 +1,70 @@
 const Cart = require("../../models/Cart");
 const Product = require("../../models/Product");
 
+// controllers/cart.js (or wherever this function lives)
 const addToCart = async (req, res) => {
   try {
-    const { userId, productId, quantity } = req.body;
+    let { userId, productId, quantity, size } = req.body;
+    quantity = Number(quantity) || 0;
 
     if (!userId || !productId || quantity <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid data provided!",
-      });
+      return res.status(400).json({ success: false, message: "Invalid data provided!" });
     }
 
-    const product = await Product.findById(productId);
-
+    const product = await Product.findById(productId).lean();
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    let cart = await Cart.findOne({ userId });
+    // Normalize size to string or null
+    if (size === undefined || size === "") size = null;
 
+    // If the product has sizes configured, require a valid size
+    if (Array.isArray(product.size) && product.size.length > 0) {
+      if (!size) {
+        return res.status(400).json({ success: false, message: "Size is required for this product" });
+      }
+      const productSizes = product.size
+        .flatMap(s => String(s).split(","))
+        .map(s => s.trim())
+        .filter(Boolean);
+      const isValidSize = new Set(productSizes).has(String(size));
+      if (!isValidSize) {
+        return res.status(400).json({ success: false, message: "Invalid size selection" });
+      }
+    }
+
+    // Load or create cart
+    let cart = await Cart.findOne({ userId });
     if (!cart) {
       cart = new Cart({ userId, items: [] });
     }
 
-    const findCurrentProductIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId
+    // Find existing line by (productId + size)
+    const idx = cart.items.findIndex(
+      (item) =>
+        item.productId.toString() === productId &&
+        String(item.size ?? null) === String(size ?? null)
     );
 
-    if (findCurrentProductIndex === -1) {
-      cart.items.push({ productId, quantity });
+    if (idx === -1) {
+      cart.items.push({ productId, size, quantity });
     } else {
-      cart.items[findCurrentProductIndex].quantity += quantity;
+      cart.items[idx].quantity += quantity;
     }
 
     await cart.save();
-    res.status(200).json({
-      success: true,
-      data: cart,
+
+    // (Optional) populate product info in response
+    await cart.populate({
+      path: "items.productId",
+      select: "title image price salePrice size totalStock",
     });
+
+    return res.status(200).json({ success: true, data: cart });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Error",
-    });
+    console.error("addToCart error:", error);
+    return res.status(500).json({ success: false, message: "Error" });
   }
 };
 
