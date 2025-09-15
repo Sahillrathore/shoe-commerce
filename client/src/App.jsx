@@ -25,6 +25,7 @@ import SearchProducts from "./pages/shopping-view/search";
 
 import RequireAuth from "./components/common/RequireAuth";
 import RequireAdmin from "./components/common/RequireAdmin";
+import { RingLoader } from "./components/ui/RingLoader";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
@@ -34,7 +35,12 @@ function App() {
     dispatch(checkAuth());
   }, [dispatch]);
 
-  if (isLoading) return <Skeleton className="w-[800px] bg-black h-[600px]" />;
+  if (isLoading)
+    return (
+      <Skeleton className="w-screen h-screen grid place-items-center bg-white border border-zinc-200">
+        <RingLoader /> {/* or <DotsLoader /> */}
+      </Skeleton>
+    );
 
   return (
     <div className="flex flex-col overflow-hidden bg-white">

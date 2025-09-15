@@ -61,7 +61,7 @@ const loginUser = async (req, res) => {
       .cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production", // set true on HTTPS
-        sameSite: "lax", // adjust to 'none' (+ secure:true) if cross-site is needed
+        sameSite: "none", // adjust to 'none' (+ secure:true) if cross-site is needed
         maxAge: sevenDaysMs,
         path: "/",
       })
@@ -88,7 +88,7 @@ const logoutUser = (req, res) => {
     .clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none",
       path: "/",
     })
     .json({ success: true, message: "Logged out successfully!" });

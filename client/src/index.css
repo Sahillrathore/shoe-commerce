@@ -67,3 +67,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* src/index.css (or globals.css) */
+@layer utilities {
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+}
