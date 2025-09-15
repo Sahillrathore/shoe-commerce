@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import axios from "axios";
 import { Info } from "lucide-react";
+import api from "@/lib/api";
 
 function ShoppingCheckout() {
   const { cartItems } = useSelector((state) => state.shopCart);
@@ -104,7 +105,7 @@ function ShoppingCheckout() {
     }
     setCouponApplying(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/coupons/validate", {
+      const res = await api.post("/coupons/validate", {
         code,
         subtotal,
         userId: user?.id,

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
+import api from "@/lib/api";
 
 /**
  * Props (existing):
@@ -84,8 +85,8 @@ function ProductImageUpload({
     try {
       const data = new FormData();
       data.append("my_file", imageFile);
-      const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-image",
+      const response = await api.post(
+        "/admin/products/upload-image",
         data
       );
       if (response?.data?.success) {
@@ -116,8 +117,8 @@ function ProductImageUpload({
       const data = new FormData();
       filesToSend.forEach((f) => data.append("my_files", f));
 
-      const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-images",
+      const response = await api.post(
+        "/admin/products/upload-images",
         data
       );
 

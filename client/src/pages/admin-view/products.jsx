@@ -19,6 +19,7 @@ import {
 } from "@/store/admin/products-slice";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import api from "@/lib/api";
 
 const initialFormData = {
   image: "",
@@ -102,8 +103,8 @@ function AdminProducts() {
     try {
       const data = new FormData();
       [...files].forEach((f) => data.append("my_files", f));
-      const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-images",
+      const response = await api.post(
+        "/admin/products/upload-images",
         data
       );
       if (response?.data?.success) {
