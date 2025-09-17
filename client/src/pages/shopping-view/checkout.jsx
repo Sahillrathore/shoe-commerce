@@ -11,6 +11,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import axios from "axios";
 import { Info } from "lucide-react";
 import api from "@/lib/api";
+// add with other imports
+import QRCode from "qrcode";
+import { useEffect } from "react"; // already present, just ensure it's imported
 
 function ShoppingCheckout() {
   const { cartItems } = useSelector((state) => state.shopCart);
@@ -31,6 +34,12 @@ function ShoppingCheckout() {
   // confirm modal
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
+
+  const [upiQRDataUrl, setUpiQRDataUrl] = useState("");
+  const [upiUTR, setUpiUTR] = useState(""); // user’s payment reference after paying
+  // ---- CONFIG: set your merchant VPA & name here or pull from your config API ----
+  const MERCHANT_UPI = "sahilrathore1@indianbank";
+  const MERCHANT_NAME = "Sahil";
 
   const dispatch = useDispatch();
   const { toast } = useToast();
@@ -61,6 +70,20 @@ function ShoppingCheckout() {
   const finalAmount = Math.max(0, subtotal - offerDiscount);
 
   const isCartEmpty = items.length === 0;
+
+  // Build UPI intent URI
+  function buildUpiUri({ pa, pn, am, tn, tr }) {
+    // pa: payee address (VPA), pn: payee name, am: amount, tn: note, tr: transaction ref (optional)
+    const params = new URLSearchParams({
+      pa: String(pa),
+      pn: String(pn),
+      am: String(Number(am || 0).toFixed(2)),
+      tn: String(tn || "Order Payment"),
+      cu: "INR",
+    });
+    if (tr) params.set("tr", String(tr));
+    return `upi://pay?${params.toString()}`;
+  }
 
   // Basic UPI validation: abc@upiapp
   const isValidUpiId = (v) =>
@@ -197,7 +220,13 @@ function ShoppingCheckout() {
       // UPI meta (if any)
       paymentMeta:
         paymentMethod === "upi"
-          ? { upiId: String(upiId).trim(), upiName: String(upiName).trim() }
+          ? {
+            upiId: String(upiId).trim(),
+            upiName: String(upiName).trim(),
+            // utr: String(upiUTR).trim(),              // <-- add this
+            merchantVpa: MERCHANT_UPI,
+            amount: finalAmount,
+          }
           : undefined,
     };
   }
@@ -232,6 +261,28 @@ function ShoppingCheckout() {
       .finally(() => setPlacing(false));
   }
 
+  useEffect(() => {
+    if (paymentMethod !== "upi") {
+      setUpiQRDataUrl("");
+      return;
+    }
+    // Optional: include a lightweight client-side ref/txn id for the QR (helps reconciliation)
+    const localRef = `ORD-${Date.now()}`;
+
+    const uri = buildUpiUri({
+      pa: MERCHANT_UPI,
+      pn: MERCHANT_NAME,
+      am: finalAmount,              // your computed payable
+      tn: `Order payment ₹${finalAmount}`,
+      tr: localRef,
+    });
+
+    QRCode.toDataURL(uri, { margin: 1, scale: 6 })
+      .then(setUpiQRDataUrl)
+      .catch(() => setUpiQRDataUrl("")); // fail silent
+  }, [paymentMethod, finalAmount]);
+
+
   return (
     <div className="flex flex-col">
       <div className="relative h-[300px] w-full overflow-hidden">
@@ -255,6 +306,8 @@ function ShoppingCheckout() {
               />
             ))
             : null}
+
+          <p className="text-xs text-gray-600">Expected Delivery 4-6 days</p>
 
           {/* Offers / Coupons */}
           <div className="border rounded-lg p-4 space-y-3">
@@ -391,6 +444,54 @@ function ShoppingCheckout() {
 
             {paymentMethod === "upi" && (
               <div className="grid gap-3 mt-2">
+                {/* QR + merchant info */}
+                <div className="rounded-lg border p-3">
+                  <p className="font-medium">Scan & Pay via UPI</p>
+                  <p className="text-xs text-muted-foreground">
+                    Payable: <span className="font-semibold">₹{finalAmount}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Receiver: <span className="font-semibold">{MERCHANT_NAME}</span> (
+                    {MERCHANT_UPI})
+                  </p>
+
+                  <div className="mt-3 flex items-center gap-4">
+                    <div className="p-2 border rounded-md">
+                      {upiQRDataUrl ? (
+                        <img
+                          src={upiQRDataUrl}
+                          alt="UPI QR"
+                          className="h-[200px] w-[200px]"
+                        />
+                      ) : (
+                        <div className="h-[200px] w-[200px] grid place-items-center text-xs text-muted-foreground">
+                          Generating QR…
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {/* On mobile this opens UPI app; safe to show for desktop too */}
+                      <a
+                        href={buildUpiUri({
+                          pa: MERCHANT_UPI,
+                          pn: MERCHANT_NAME,
+                          am: finalAmount,
+                          tn: `Order payment ₹${finalAmount}`,
+                        })}
+                        className="text-sm underline"
+                      >
+                        Open in UPI app
+                      </a>
+                      <p className="text-xs text-muted-foreground max-w-[220px]">
+                        After paying, enter the UPI details below so we can verify
+                        your payment faster.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payer’s UPI details */}
                 <div>
                   <label className="text-sm block mb-1">UPI ID</label>
                   <Input
@@ -404,6 +505,7 @@ function ShoppingCheckout() {
                     </p>
                   )}
                 </div>
+
                 <div>
                   <label className="text-sm block mb-1">Name (as on UPI)</label>
                   <Input
@@ -517,12 +619,9 @@ function ShoppingCheckout() {
 
             {paymentMethod === "upi" && (
               <div className="rounded-md border p-3">
-                <p className="text-sm">
-                  <span className="font-semibold">UPI ID:</span> {upiId || "-"}
-                </p>
-                <p className="text-sm">
-                  <span className="font-semibold">Name:</span> {upiName || "-"}
-                </p>
+                <p className="text-sm"><span className="font-semibold">UPI ID:</span> {upiId || "-"}</p>
+                <p className="text-sm"><span className="font-semibold">Name:</span> {upiName || "-"}</p>
+                {/* <p className="text-sm"><span className="font-semibold">UTR:</span> {upiUTR || "-"}</p> */}
               </div>
             )}
 

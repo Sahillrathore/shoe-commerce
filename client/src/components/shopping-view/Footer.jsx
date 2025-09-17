@@ -11,8 +11,8 @@ const links = {
     { label: "Best Sellers", path: "/shop/listing" },
   ],
   help: [
-    { label: "Track Order", path: "/orders/track" },
-    { label: "Shipping & Delivery", path: "/help/shipping" },
+    { label: "Track Order", path: "/shop/account" },
+    { label: "Shipping & Delivery", path: "/shop/account" },
     // { label: "Returns & Refunds", path: "/help/returns" },
     // { label: "Size Guide", path: "/help/size-guide" },
     // { label: "Contact Us", path: "/contact" },
@@ -132,8 +132,7 @@ export default function Footer() {
               secure checkout, and fast delivery on every order.
             </p>
 
-            <div className="mt-6 flex items-center gap-3">
-              {/* Socials */}
+            {/* <div className="mt-6 flex items-center gap-3">
               {[
                 {
                   name: "Instagram",
@@ -177,10 +176,10 @@ export default function Footer() {
                   </svg>
                 </a>
               ))}
-            </div>
+            </div> */}
 
             {/* Payment badges (placeholder SVGs) */}
-            <div className="mt-6 flex flex-wrap items-center gap-2">
+            {/* <div className="mt-6 flex flex-wrap items-center gap-2">
               {["Visa", "Mastercard", "UPI", "Rupay"].map((p) => (
                 <span
                   key={p}
@@ -190,7 +189,7 @@ export default function Footer() {
                   {p}
                 </span>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Shop */}

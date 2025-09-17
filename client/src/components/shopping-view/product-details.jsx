@@ -173,9 +173,9 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
       <DialogContent
         className="
           grid grid-cols-1 lg:grid-cols-2 gap-8 sm:p-12
-          w-[95vw] sm:max-w-[90vw] lg:max-w-[70vw]
+          w-[95vw] sm:max-w-[90vw] lg:max-w-[80vw]
           h-[90vh] max-h-[90vh] overflow-y-auto overscroll-contain
-          lg:h-[85vh] lg:max-h-[85vh] lg:overflow-hidden
+          lg:h-[90vh] lg:max-h-[90vh] lg:overflow-hidden
         "
       >
         {/* LEFT: Images (centered on desktop) */}
