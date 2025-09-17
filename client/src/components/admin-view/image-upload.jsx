@@ -81,17 +81,20 @@ function ProductImageUpload({
   }
 
   async function uploadImageToCloudinary() {
+    if (!imageFile) return;
     setImageLoadingState(true);
     try {
       const data = new FormData();
       data.append("my_file", imageFile);
-      const response = await api.post(
-        "/admin/products/upload-image",
-        data
-      );
-      if (response?.data?.success) {
-        setUploadedImageUrl(response.data.result.url);
-      }
+
+      await api.post("/admin/products/upload-image", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+        transformRequest: [(d) => d], // IMPORTANT: don't stringify FormData
+      }).then((response) => {
+        if (response?.data?.success) {
+          setUploadedImageUrl(response.data.result.url);
+        }
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -103,30 +106,23 @@ function ProductImageUpload({
   async function uploadGalleryToCloudinary(files) {
     if (!files?.length) return;
     setGalleryUploading(true);
-
     try {
-      // enforce maxGallery
       const remaining = Math.max(0, maxGallery - (galleryList?.length || 0));
       const filesToSend = Array.from(files).slice(0, remaining);
-
-      if (filesToSend.length === 0) {
-        setGalleryUploading(false);
-        return;
-      }
+      if (!filesToSend.length) return;
 
       const data = new FormData();
+      // match backend field name exactly
       filesToSend.forEach((f) => data.append("my_files", f));
 
-      const response = await api.post(
-        "/admin/products/upload-images",
-        data
-      );
+      const response = await api.post("/admin/products/upload-images", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+        transformRequest: [(d) => d],
+      });
 
       if (response?.data?.success && Array.isArray(response.data.urls)) {
-        // merge & de-duplicate
-        const merged = Array.from(
-          new Set([...(galleryList || []), ...response.data.urls])
-        ).slice(0, maxGallery);
+        const merged = Array.from(new Set([...(galleryList || []), ...response.data.urls]))
+          .slice(0, maxGallery);
         setGalleryList(merged);
       }
     } catch (err) {
@@ -136,8 +132,11 @@ function ProductImageUpload({
     }
   }
 
+
   function handleGalleryChange(e) {
     const files = e.target.files || [];
+    console.log(files);
+
     uploadGalleryToCloudinary(files);
     // reset input so same file can be selected again
     e.target.value = "";
@@ -218,11 +217,11 @@ function ProductImageUpload({
             className="block w-full"
           />
 
-          {galleryUploading ? (
+          {/* {galleryUploading ? (
             <div className="mt-3">
               <Skeleton className="h-20 w-full bg-gray-100" />
             </div>
-          ) : null}
+          ) : null} */}
 
           {galleryList?.length ? (
             <div className="flex flex-wrap gap-3 mt-3">
