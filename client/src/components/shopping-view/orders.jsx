@@ -48,10 +48,10 @@ function ShoppingOrders() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Order Date</TableHead>
-              <TableHead>Order Status</TableHead>
-              <TableHead>Order Price</TableHead>
+              <TableHead className='sm:text-base text-xs'>Order ID</TableHead>
+              <TableHead className='sm:text-base text-xs'>Order Date</TableHead>
+              <TableHead className='sm:text-base text-xs'>Order Status</TableHead>
+              <TableHead className='sm:text-base text-xs'>Order Price</TableHead>
               <TableHead>
                 <span className="sr-only">Details</span>
               </TableHead>
@@ -61,8 +61,8 @@ function ShoppingOrders() {
             {orderList && orderList.length > 0
               ? orderList.map((orderItem) => (
                   <TableRow>
-                    <TableCell>{orderItem?._id}</TableCell>
-                    <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                    <TableCell className='sm:text-base text-xs'>{orderItem?._id}</TableCell>
+                    <TableCell className='sm:text-base text-xs'>{orderItem?.orderDate.split("T")[0]}</TableCell>
                     <TableCell>
                       <Badge
                         className={`py-1 px-3 ${
