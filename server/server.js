@@ -57,7 +57,7 @@ app.use("/api/common/feature", commonFeatureRouter);
 // ✅ Instead of listening, export the app
 
 if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT || 5001;
   app.listen(PORT, () =>
     console.log(`Server running locally on http://localhost:${PORT}`)
   );

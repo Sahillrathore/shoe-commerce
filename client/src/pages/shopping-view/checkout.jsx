@@ -455,7 +455,7 @@ function ShoppingCheckout() {
                     {MERCHANT_UPI})
                   </p>
 
-                  <div className="mt-3 flex items-center gap-4">
+                  <div className="mt-3 flex sm:flex-row flex-col items-center gap-4">
                     <div className="p-2 border rounded-md">
                       {upiQRDataUrl ? (
                         <img

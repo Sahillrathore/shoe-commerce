@@ -33,7 +33,7 @@ const ShoppingProductTile = ({
   return (
     <Card className="w-full max-w-sm mx-auto">
       <div onClick={() => handleGetProductDetails(product?._id)}>
-        <div className="relative">
+        <div className="relative cursor-pointer">
           <img
             src={product?.image}
             alt={product?.title}
