@@ -185,28 +185,32 @@ const updateCartItemQty = async (req, res) => {
 const deleteCartItem = async (req, res) => {
   try {
     const { userId, productId } = req.params;
+    // size can be "M", "L", "", undefined; normalize to null when empty
+    let { size } = req.query;
+    size = (size === undefined || size === "") ? null : size;
+
     if (!userId || !productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid data provided!",
-      });
+      return res.status(400).json({ success: false, message: "Invalid data provided!" });
     }
 
-    const cart = await Cart.findOne({ userId }).populate({
-      path: "items.productId",
-      select: "image title price salePrice",
-    });
-
+    const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart not found!",
-      });
+      return res.status(404).json({ success: false, message: "Cart not found!" });
     }
 
+    // Remove only the item that matches both productId and size
+    const beforeLen = cart.items.length;
     cart.items = cart.items.filter(
-      (item) => item.productId._id.toString() !== productId
+      (item) =>
+        !(
+          item.productId.toString() === productId &&
+          String(item.size ?? null) === String(size ?? null)
+        )
     );
+
+    if (cart.items.length === beforeLen) {
+      return res.status(404).json({ success: false, message: "Cart item not present!" });
+    }
 
     await cart.save();
 
@@ -225,19 +229,13 @@ const deleteCartItem = async (req, res) => {
       size: item.size ?? null,
     }));
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: {
-        ...cart._doc,
-        items: populateCartItems,
-      },
+      data: { ...cart._doc, items: populateCartItems },
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Error",
-    });
+    return res.status(500).json({ success: false, message: "Error" });
   }
 };
 

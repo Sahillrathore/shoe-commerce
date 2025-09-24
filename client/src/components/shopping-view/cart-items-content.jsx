@@ -12,31 +12,29 @@ function UserCartItemsContent({ cartItem }) {
   const { toast } = useToast();
 
   function handleUpdateQuantity(getCartItem, typeOfAction) {
-    if (typeOfAction == "plus") {
+    if (typeOfAction === "plus") {
       let getCartItems = cartItems.items || [];
-
       if (getCartItems.length) {
         const indexOfCurrentCartItem = getCartItems.findIndex(
-          (item) => item.productId === getCartItem?.productId
+          (item) =>
+            item.productId === getCartItem?.productId &&
+            String(item.size ?? null) === String(getCartItem?.size ?? null)
         );
 
         const getCurrentProductIndex = productList.findIndex(
           (product) => product._id === getCartItem?.productId
         );
-        const getTotalStock = productList[getCurrentProductIndex].totalStock;
-
-        console.log(getCurrentProductIndex, getTotalStock, "getTotalStock");
+        const getTotalStock = productList[getCurrentProductIndex]?.totalStock ?? 0;
 
         if (indexOfCurrentCartItem > -1) {
           const getQuantity = getCartItems[indexOfCurrentCartItem].quantity;
-          if (getQuantity + 1 > getTotalStock) {
-            toast({
-              title: `Only ${getQuantity} quantity can be added for this item`,
-              variant: "destructive",
-            });
-
-            return;
-          }
+          // if (getQuantity + 1 > getTotalStock) {
+          //   toast({
+          //     title: `Only ${getTotalStock} quantity can be added for this item`,
+          //     variant: "destructive",
+          //   });
+          //   return;
+          // }
         }
       }
     }
@@ -45,6 +43,7 @@ function UserCartItemsContent({ cartItem }) {
       updateCartQuantity({
         userId: user?.id,
         productId: getCartItem?.productId,
+        size: getCartItem?.size ?? null,            // <-- include size
         quantity:
           typeOfAction === "plus"
             ? getCartItem?.quantity + 1
@@ -52,21 +51,36 @@ function UserCartItemsContent({ cartItem }) {
       })
     ).then((data) => {
       if (data?.payload?.success) {
-        toast({
-          title: "Cart item is updated successfully",
-        });
+        toast({ title: "Cart item is updated successfully" });
       }
     });
   }
 
   function handleCartItemDelete(getCartItem) {
     dispatch(
-      deleteCartItem({ userId: user?.id, productId: getCartItem?.productId })
+      deleteCartItem({
+        userId: user?.id,
+        productId: getCartItem?.productId,
+        size: getCartItem?.size ?? null,            // <-- include size
+      })
     ).then((data) => {
       if (data?.payload?.success) {
-        toast({
-          title: "Cart item is deleted successfully",
-        });
+        toast({ title: "Cart item is deleted successfully" });
+      }
+    });
+  }
+
+
+  function handleCartItemDelete(getCartItem) {
+    dispatch(
+      deleteCartItem({
+        userId: user?.id,
+        productId: getCartItem?.productId,
+        size: getCartItem?.size ?? null,   // <-- include size
+      })
+    ).then((data) => {
+      if (data?.payload?.success) {
+        toast({ title: "Cart item is deleted successfully" });
       }
     });
   }

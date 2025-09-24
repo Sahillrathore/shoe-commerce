@@ -35,23 +35,24 @@ export const fetchCartItems = createAsyncThunk(
 
 export const deleteCartItem = createAsyncThunk(
   "cart/deleteCartItem",
-  async ({ userId, productId }) => {
-    const response = await api.delete(
-      `/shop/cart/${userId}/${productId}`
-    );
-
+  async ({ userId, productId, size = null }) => {
+    const response = await api.delete(`/shop/cart/${userId}/${productId}`, {
+      params: { size }, // <-- send size as query param
+    });
     return response.data;
   }
 );
 
+
 export const updateCartQuantity = createAsyncThunk(
   "cart/updateCartQuantity",
-  async ({ userId, productId, quantity }) => {
+  async ({ userId, productId, size = null, quantity }) => {
     const response = await api.put(
       "/shop/cart/update-cart",
       {
         userId,
         productId,
+        size,
         quantity,
       }
     );
