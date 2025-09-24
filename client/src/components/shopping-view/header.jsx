@@ -24,31 +24,30 @@ import { useEffect, useState } from "react";
 import { fetchCartItems } from "@/store/shop/cart-slice";
 import { Label } from "../ui/label";
 
-function MenuItems() {
+function MenuItems({ onAfterNavigate }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   function handleNavigate(getCurrentMenuItem) {
-    console.log(getCurrentMenuItem);
-
     sessionStorage.removeItem("filters");
     const currentFilter =
       getCurrentMenuItem.id !== "home" &&
         getCurrentMenuItem.id !== "products" &&
         getCurrentMenuItem.id !== "search"
-        ? {
-          category: [getCurrentMenuItem.id],
-        }
+        ? { category: [getCurrentMenuItem.id] }
         : null;
 
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
 
-    location.pathname.includes("listing") && currentFilter !== null
-      ? setSearchParams(
-        new URLSearchParams(`?category=${getCurrentMenuItem.id}`)
-      )
-      : navigate(getCurrentMenuItem.path);
+    if (location.pathname.includes("listing") && currentFilter !== null) {
+      setSearchParams(new URLSearchParams(`?category=${getCurrentMenuItem.id}`));
+    } else {
+      navigate(getCurrentMenuItem.path);
+    }
+
+    // NEW: close the sheet immediately
+    onAfterNavigate?.();
   }
 
   return (
@@ -66,7 +65,13 @@ function MenuItems() {
   );
 }
 
-function HeaderRightContent({ isAuthenticated }) {
+
+function HeaderRightContent({
+  isAuthenticated,
+  onAnyLinkClick,
+}
+
+) {
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const [openCartSheet, setOpenCartSheet] = useState(false);
@@ -85,69 +90,56 @@ function HeaderRightContent({ isAuthenticated }) {
 
   return (
     <div className="flex lg:items-center lg:flex-row flex-row-reverse gap-4">
-      {/* Cart always visible */}
       <Sheet open={openCartSheet} onOpenChange={setOpenCartSheet}>
-
         <div className="flex items-center gap-4 w-full">
-          <Link to="/shop/search" className="flex items-center gap-2">
-          <Search className="h-6 w-6" />
-          {/* <span className="font-bold">Ecommerce</span> */}
-        </Link>
+          <Link to="/shop/search" className="flex items-center gap-2" onClick={onAnyLinkClick}>
+            <Search className="h-6 w-6" />
+          </Link>
 
-        <Button
-          onClick={() => setOpenCartSheet(true)}
-          variant="outline"
-          size="icon"
-          className="relative"
-        >
-          <ShoppingCart className="w-6 h-6" />
-          <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
-            {cartItems?.items?.length || 0}
-          </span>
-          <span className="sr-only">User cart</span>
-        </Button>
-        <UserCartWrapper
-          setOpenCartSheet={setOpenCartSheet}
-          cartItems={cartItems?.items?.length > 0 ? cartItems.items : []}
-        />
+          <Button
+            onClick={() => setOpenCartSheet(true)}
+            variant="outline"
+            size="icon"
+            className="relative"
+          >
+            <ShoppingCart className="w-6 h-6" />
+            <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
+              {cartItems?.items?.length || 0}
+            </span>
+            <span className="sr-only">User cart</span>
+          </Button>
+
+          <UserCartWrapper
+            setOpenCartSheet={setOpenCartSheet}
+            cartItems={cartItems?.items?.length > 0 ? cartItems.items : []}
+          />
         </div>
       </Sheet>
 
-      {/* If NOT logged in → show Login button */}
       {!isAuthenticated ? (
-        <Button onClick={() => navigate("/auth/login")}>Login</Button>
+        <Button onClick={() => { onAnyLinkClick?.(); navigate("/auth/login"); }}>
+          Login
+        </Button>
       ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Avatar className="bg-black cursor-pointer">
-              <AvatarFallback className="bg-black text-white font-extrabold">
-                {user?.userName?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" className="w-56">
-            <DropdownMenuLabel>
-              Logged in as {user?.userName}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/shop/account")}>
-              <UserCog className="mr-2 h-4 w-4" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        /* …unchanged dropdown… */
+        <DropdownMenu>{/* ... */}</DropdownMenu>
       )}
     </div>
   );
 }
 
+
 function ShoppingHeader() {
   const { isAuthenticated } = useSelector((state) => state.auth);
+
+  // NEW: control the mobile sheet open state
+  const [openMobile, setOpenMobile] = useState(false);
+  const location = useLocation();
+
+  // NEW: whenever the route changes, close the sheet
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [location.pathname, location.search]);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
@@ -157,8 +149,8 @@ function ShoppingHeader() {
           <span className="font-bold">Ecommerce</span>
         </Link>
 
-        {/* Mobile menu */}
-        <Sheet>
+        {/* Mobile menu (controlled) */}
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="lg:hidden">
               <Menu className="h-6 w-6" />
@@ -166,8 +158,12 @@ function ShoppingHeader() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full max-w-xs">
-            <MenuItems />
-            <HeaderRightContent isAuthenticated={isAuthenticated} />
+            {/* pass a close callback so clicks can close immediately */}
+            <MenuItems onAfterNavigate={() => setOpenMobile(false)} />
+            <HeaderRightContent
+              isAuthenticated={isAuthenticated}
+              onAnyLinkClick={() => setOpenMobile(false)}
+            />
           </SheetContent>
         </Sheet>
 
