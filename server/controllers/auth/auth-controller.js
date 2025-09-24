@@ -44,6 +44,7 @@ const loginUser = async (req, res) => {
         message: "Incorrect password! Please try again",
       });
 
+    // ✅ JWT expires in 7 days
     const token = jwt.sign(
       {
         id: checkUser._id,
@@ -52,11 +53,12 @@ const loginUser = async (req, res) => {
         userName: checkUser.userName,
       },
       "CLIENT_SECRET_KEY",
-      { expiresIn: "7d" } // ✅ token valid for 7 days
+      { expiresIn: "7d" }
     );
 
-    // ✅ cookie valid for 7 days
+    // ✅ Cookie also valid for 7 days
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
     res
       .cookie("token", token, {
         httpOnly: true,
