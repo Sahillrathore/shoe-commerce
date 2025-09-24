@@ -68,7 +68,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section className="flex flex-col items-center justify-between gap-6 py-10 md:flex-row">
           <div className="text-center md:text-left">
-            <h3 className="text-2xl font-semibold text-zinc-900">
+            <h3 className="sm:text-2xl text-xl font-semibold text-zinc-900">
               Join the Club & get 10% off
             </h3>
             <p className="mt-1 text-sm text-zinc-600">

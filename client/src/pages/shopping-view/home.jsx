@@ -25,18 +25,18 @@ import {
   fetchProductDetails,
 } from "@/store/shop/products-slice";
 import ShoppingProductTile from "@/components/shopping-view/product-tile";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/components/ui/use-toast";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getFeatureImages } from "@/store/common-slice";
 
 const categoriesWithIcon = [
-  { id: "men", label: "Men", icon: ShirtIcon },
-  { id: "women", label: "Women", icon: CloudLightning },
-  { id: "kids", label: "Kids", icon: BabyIcon },
-  { id: "accessories", label: "Accessories", icon: WatchIcon },
-  { id: "footwear", label: "Footwear", icon: UmbrellaIcon },
+  { id: "men", label: "Men", icon: '/mensCat.png' },
+  { id: "women", label: "Women", icon: '/womenCat.jpg' },
+  // { id: "kids", label: "Kids", icon: BabyIcon },
+  { id: "accessories", label: "Accessories", icon: '/watch.png' },
+  { id: "footwear", label: "Footwear", icon: '/chicagoshoe.png' },
 ];
 
 const brandsWithIcon = [
@@ -161,24 +161,6 @@ function ShoppingHome() {
         </Button>
       </div>
 
-      {/* <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-8">Shop by Brand</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {brandsWithIcon.map((brandItem) => (
-              <Card
-                onClick={() => handleNavigateToListingPage(brandItem, "brand")}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-              >
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <brandItem.icon className="w-12 h-12 mb-4 text-primary" />
-                  <span className="font-bold">{brandItem.label}</span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section> */}
       <div>
         <section className="py-10">
           <div className="container mx-auto px-4">
@@ -188,7 +170,7 @@ function ShoppingHome() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {productList && productList.length > 0
                 ? productList
-                  .filter(p => p?.subCategory === "popular") // only popular
+                  .filter(p => p?.subCategory === "popular").slice(0, 9) // only popular
                   .map(productItem => (
                     <ShoppingProductTile
                       key={productItem?._id || productItem?.id}
@@ -200,6 +182,8 @@ function ShoppingHome() {
                 : null}
             </div>
 
+
+            <Link to='/shop/listing' className="text-base block w-fit mt-5 mx-auto font-semibold px-8 py-3 border border-zinc-300 hover:border-zinc-500 transition-all duration-300 rounded-lg">View All</Link>
           </div>
         </section>
         <section className="py-10">
@@ -231,23 +215,33 @@ function ShoppingHome() {
           <h2 className="text-3xl font-normal capitalize text-center mb-8">
             Shop by category
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {categoriesWithIcon.map((categoryItem) => (
-              <Card
-                onClick={() =>
-                  handleNavigateToListingPage(categoryItem, "category")
-                }
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-              >
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <categoryItem.icon className="w-12 h-12 mb-4 text-primary" />
-                  <span className="font-bold">{categoryItem.label}</span>
-                </CardContent>
-              </Card>
-            ))}
+
+          {/* Flex wrapper to center the grid */}
+          <div className="flex justify-center">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-6 gap-2">
+              {categoriesWithIcon.map((categoryItem) => (
+                <Card
+                  key={categoryItem.label}
+                  onClick={() =>
+                    handleNavigateToListingPage(categoryItem, "category")
+                  }
+                  className="cursor-pointer hover:shadow-lg transition-shadow pb-2 overflow-hidden"
+                >
+                  <CardContent className="flex flex-col items-center justify-center p-0 overflow-hidden">
+                    <img
+                      src={categoryItem.icon}
+                      alt={categoryItem.label}
+                      className="w-44 sm:h-44 h-40 mb-4"
+                    />
+                    <span className="font-bold">{categoryItem.label}</span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
+
 
       <ProductDetailsDialog
         open={openDetailsDialog}
