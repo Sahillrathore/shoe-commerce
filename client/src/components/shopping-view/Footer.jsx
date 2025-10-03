@@ -112,8 +112,8 @@ export default function Footer() {
             </Link>
 
             <p className="mt-4 max-w-sm text-sm text-zinc-600">
-              Premium fashion & essentials curated with care. Free returns,
-              secure checkout, and fast delivery on every order.
+              Premium fashion & essentials curated with care.
+              Secure checkout, and fast delivery on every order.
             </p>
 
             {/* <div className="mt-6 flex items-center gap-3">
