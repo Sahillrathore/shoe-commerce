@@ -61,7 +61,7 @@ function ShoppingOrders() {
             {orderList && orderList.length > 0
               ? orderList.map((orderItem) => (
                   <TableRow>
-                    <TableCell className='sm:text-base text-xs'>{orderItem?._id}</TableCell>
+                    <TableCell className='sm:text-base text-xs'>{orderItem?._id?.slice(-6)}</TableCell>
                     <TableCell className='sm:text-base text-xs'>{orderItem?.orderDate.split("T")[0]}</TableCell>
                     <TableCell>
                       <Badge

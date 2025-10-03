@@ -56,9 +56,9 @@ function ShoppingOrderDetailsView({ orderDetails }) {
               {orderDetails?.cartItems && orderDetails?.cartItems.length > 0
                 ? orderDetails?.cartItems.map((item) => (
                     <li className="flex items-center justify-between">
-                      <span>Title: {item.title}</span>
-                      <span>Quantity: {item.quantity}</span>
-                      <span>Price: ₹{item.price}</span>
+                      <span className="sm:text-base text-sm">{item.title}</span>
+                      <span className="sm:text-base text-sm">Quantity: {item.quantity}</span>
+                      <span className="sm:text-base text-sm">Price: ₹{item.price}</span>
                     </li>
                   ))
                 : null}
@@ -68,8 +68,8 @@ function ShoppingOrderDetailsView({ orderDetails }) {
         <div className="grid gap-4">
           <div className="grid gap-2">
             <div className="font-medium">Shipping Info</div>
-            <div className="grid gap-0.5 text-muted-foreground">
-              <span>{user.userName}</span>
+            <div className="grid gap-0.5 text-zinc-700">
+              <span className="text-zinc-800">Name: {user.userName}</span>
               <span>{orderDetails?.addressInfo?.address}</span>
               <span>{orderDetails?.addressInfo?.city}</span>
               <span>{orderDetails?.addressInfo?.pincode}</span>
