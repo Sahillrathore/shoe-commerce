@@ -102,28 +102,12 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200">
+              <span className="inline-flex w-16 items-center justify-center rounded-xl border border-zinc-200">
                 {/* simple bag icon */}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-5 w-5 stroke-zinc-900"
-                >
-                  <path
-                    d="M7 7V6a5 5 0 0 1 10 0v1"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M5 7h14l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7Z"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <img src="/logo.svg" alt="" className="w-full" />
               </span>
               <span className="text-xl font-semibold text-zinc-900">
-                Ecommerce
+                ShoeNation
               </span>
             </Link>
 
