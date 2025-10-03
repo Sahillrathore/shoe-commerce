@@ -85,7 +85,8 @@ const ShoppingProductTile = ({
           </Button>
         ) : (
           <Button
-            onClick={() => addToCart(product?._id, product?.totalStock)}
+            // onClick={() => addToCart(product?._id, product?.totalStock)}
+            onClick={() => handleGetProductDetails(product?._id)}
             className="w-full sm:text-base text-xs"
           >
             Add to cart
