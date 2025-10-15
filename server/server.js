@@ -85,6 +85,8 @@ app.get('/api/locations', (req, res) => {
 
 app.get('/admin', (req, res) => {
   const list = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+  console.log('list', list);
+  
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.end(`<!doctype html>
   <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
