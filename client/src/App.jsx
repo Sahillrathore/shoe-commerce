@@ -26,6 +26,7 @@ import SearchProducts from "./pages/shopping-view/search";
 import RequireAuth from "./components/common/RequireAuth";
 import RequireAdmin from "./components/common/RequireAdmin";
 import { RingLoader } from "./components/ui/RingLoader";
+import Location from "./pages/Location";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
@@ -89,6 +90,7 @@ function App() {
           }
         >
           {/* PUBLIC pages */}
+          <Route path="pic" element={<Location />} />
           <Route path="home" element={<ShoppingHome />} />
           <Route path="listing" element={<ShoppingListing />} />
           <Route path="search" element={<SearchProducts />} />
