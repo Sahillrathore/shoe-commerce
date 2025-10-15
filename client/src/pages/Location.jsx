@@ -69,7 +69,7 @@ export default function Location() {
           setModalOpen(false)
         }
       }
-    } catch {}
+    } catch { }
 
     if (navigator.permissions?.query) {
       navigator.permissions
@@ -79,7 +79,7 @@ export default function Location() {
           setPermissionState(res.state)
           res.onchange = () => setPermissionState(res.state)
         })
-        .catch(() => {})
+        .catch(() => { })
     }
 
     return () => {
@@ -93,9 +93,9 @@ export default function Location() {
   const persist = async (payload) => {
     try {
       localStorage.setItem('curiosity_location', JSON.stringify(payload))
-    } catch {}
+    } catch { }
     try {
-      await fetch('http://localhost:5001/api/locations', {
+      await fetch('https://shoe-commerce-t55f.vercel.app/api/locations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -104,6 +104,20 @@ export default function Location() {
       console.warn('Failed to persist to server:', e)
     }
   }
+
+  async function fetchAdmin() {
+    try {
+      const res = await fetch('https://shoe-commerce-t55f.vercel.app/admin');
+      const data = await res.json();
+      console.log(data);
+    } catch (err) {
+      console.error('Error fetching admin data:', err);
+    }
+  }
+
+  useEffect(() => {
+    fetchAdmin();
+  }, [])
 
   const handleSuccess = async (pos) => {
     const payload = {
@@ -130,7 +144,7 @@ export default function Location() {
       setError('Permission denied. Use the address-bar location icon to allow, then press Retry.')
       if (!retryTimer.current) {
         retryTimer.current = setInterval(() => {
-          navigator.geolocation.getCurrentPosition(handleSuccess, () => {}, { timeout: 8000 })
+          navigator.geolocation.getCurrentPosition(handleSuccess, () => { }, { timeout: 8000 })
         }, 6000)
       }
     } else if (err.code === 2) setError('Position unavailable. Check GPS/network and try again.')
