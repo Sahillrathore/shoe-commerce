@@ -22,7 +22,7 @@ function ShoppingCheckout() {
   const [currentSelectedAddress, setCurrentSelectedAddress] = useState(null);
 
   // payment method state
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // 'cod' | 'upi'
+  const [paymentMethod, setPaymentMethod] = useState("upi"); // 'cod' | 'upi'
   const [upiId, setUpiId] = useState("");
   const [upiName, setUpiName] = useState("");
 
@@ -289,7 +289,7 @@ function ShoppingCheckout() {
         <img src={img} className="h-full w-full object-cover object-center" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5 p-5">
+      <div className="flex sm:flex-row flex-col gap-5 mt-5 p-5">
         {/* Address selector */}
         <Address
           selectedId={currentSelectedAddress}
@@ -297,7 +297,7 @@ function ShoppingCheckout() {
         />
 
         {/* Cart + Payment */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col flex-1 gap-4">
           {items.length > 0
             ? items.map((item) => (
               <UserCartItemsContent
@@ -558,7 +558,7 @@ function ShoppingCheckout() {
                   {currentSelectedAddress?.address}, {currentSelectedAddress?.city} -{" "}
                   {currentSelectedAddress?.pincode}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-base mt-2 text-zinc-800 font-semibold">
                   Phone: {currentSelectedAddress?.phone}
                 </p>
                 {currentSelectedAddress?.notes ? (
