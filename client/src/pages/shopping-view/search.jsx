@@ -1,3 +1,4 @@
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import ShoppingProductTile from "@/components/shopping-view/product-tile";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ function SearchProducts() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
-  const { searchResults } = useSelector((state) => state.shopSearch);
+  const { searchResults, isLoading } = useSelector((state) => state.shopSearch);
   const { productDetails } = useSelector((state) => state.shopProducts);
 
   const { user } = useSelector((state) => state.auth);
@@ -97,17 +98,25 @@ function SearchProducts() {
           />
         </div>
       </div>
-      {!searchResults.length ? (
+      {!isLoading && (!searchResults || searchResults.length === 0) ? (
         <h1 className="text-3xl text-zinc-600 font-extrabold">No matching products!</h1>
       ) : null}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-        {searchResults.map((item) => (
-          <ShoppingProductTile
-            handleAddtoCart={handleAddtoCart}
-            product={item}
-            handleGetProductDetails={handleGetProductDetails}
-          />
-        ))}
+        {
+          isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={`pop-skel-${i}`} />
+            ))
+            :
+            searchResults.map((item, i) => (
+              <ShoppingProductTile
+                key={i}
+                handleAddtoCart={handleAddtoCart}
+                product={item}
+                handleGetProductDetails={handleGetProductDetails}
+              />
+            ))
+        }
       </div>
       <ProductDetailsDialog
         open={openDetailsDialog}

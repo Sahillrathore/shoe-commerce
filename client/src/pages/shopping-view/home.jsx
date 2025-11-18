@@ -30,6 +30,7 @@ import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/components/ui/use-toast";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getFeatureImages } from "@/store/common-slice";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 
 const categoriesWithIcon = [
   { id: "men", label: "Men", icon: '/mensCat.png' },
@@ -49,7 +50,7 @@ const brandsWithIcon = [
 ];
 function ShoppingHome() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { productList, productDetails } = useSelector(
+  const { productList, productDetails, isLoading } = useSelector(
     (state) => state.shopProducts
   );
   const { featureImageList } = useSelector((state) => state.commonFeature);
@@ -168,20 +169,24 @@ function ShoppingHome() {
               Browse Popular <span className="sm:inline hidden">range</span>
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-6 gap-2">
-              {productList && productList.length > 0
-                ? productList
-                  .filter(p => p?.subCategory === "popular").slice(0, 9) // only popular
-                  .map(productItem => (
-                    <ShoppingProductTile
-                      key={productItem?._id || productItem?.id}
-                      handleGetProductDetails={handleGetProductDetails}
-                      product={productItem}
-                      handleAddtoCart={handleAddtoCart}
-                    />
-                  ))
-                : null}
+              {isLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                  <ProductCardSkeleton key={`pop-skel-${i}`} />
+                ))
+                : productList && productList.length > 0
+                  ? productList
+                    .filter((p) => p?.subCategory === "popular")
+                    .slice(0, 9)
+                    .map((productItem) => (
+                      <ShoppingProductTile
+                        key={productItem?._id || productItem?.id}
+                        handleGetProductDetails={handleGetProductDetails}
+                        product={productItem}
+                        handleAddtoCart={handleAddtoCart}
+                      />
+                    ))
+                  : null}
             </div>
-
 
             <Link to='/shop/listing' className="text-base block w-fit mt-5 mx-auto font-semibold px-8 py-3 border border-zinc-300 hover:border-zinc-500 transition-all duration-300 rounded-lg">View All</Link>
           </div>
@@ -192,18 +197,22 @@ function ShoppingHome() {
               Featured range
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-4 gap-2">
-              {productList && productList.length > 0
-                ? productList
-                  .filter(p => p?.subCategory === "featured") // only popular
-                  .map(productItem => (
-                    <ShoppingProductTile
-                      key={productItem?._id || productItem?.id}
-                      handleGetProductDetails={handleGetProductDetails}
-                      product={productItem}
-                      handleAddtoCart={handleAddtoCart}
-                    />
-                  ))
-                : null}
+              {isLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                  <ProductCardSkeleton key={`feat-skel-${i}`} />
+                ))
+                : productList && productList.length > 0
+                  ? productList
+                    .filter((p) => p?.subCategory === "featured")
+                    .map((productItem) => (
+                      <ShoppingProductTile
+                        key={productItem?._id || productItem?.id}
+                        handleGetProductDetails={handleGetProductDetails}
+                        product={productItem}
+                        handleAddtoCart={handleAddtoCart}
+                      />
+                    ))
+                  : null}
             </div>
 
           </div>

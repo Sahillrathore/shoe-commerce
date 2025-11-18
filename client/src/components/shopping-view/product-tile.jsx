@@ -56,17 +56,17 @@ const ShoppingProductTile = ({
         <CardContent className="sm:p-4 p-2">
           <h2 className="sm:text-xl text-sm font-bold mb-2">{product?.title}</h2>
           <div className="flex justify-between items-center mb-2">
-            <span className="sm:text-[16px] text-xs text-muted-foreground">
+            <span className="sm:text-sm text-xs text-muted-foreground">
               {categoryOptionsMap[product?.category]}
             </span>
-            <span className="sm:text-[16px] text-xs text-muted-foreground">
+            <span className="sm:text-sm text-xs text-muted-foreground">
               {brandOptionsMap[product?.brand] || ''}
             </span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span
               className={`${product?.salePrice > 0 ? "line-through" : ""
-                } sm:text-lg text-base font-semibold text-primary`}
+                } sm:text-lg text-base font-semibold text-zinc-500`}
             >
               ₹{product?.price}
             </span>
@@ -78,7 +78,7 @@ const ShoppingProductTile = ({
           </div>
         </CardContent>
       </div>
-      <CardFooter className="sm:p-6 p-3">
+      <CardFooter className="sm:py:2 sm:px-4 p-3">
         {product?.totalStock === 0 ? (
           <Button className="w-full opacity-60 cursor-not-allowed">
             Out Of Stock

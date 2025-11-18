@@ -90,7 +90,7 @@ function App() {
           }
         >
           {/* PUBLIC pages */}
-          <Route path="pic" element={<Location />} />
+          {/* <Route path="pic" element={<Location />} /> */}
           <Route path="home" element={<ShoppingHome />} />
           <Route path="listing" element={<ShoppingListing />} />
           <Route path="search" element={<SearchProducts />} />
